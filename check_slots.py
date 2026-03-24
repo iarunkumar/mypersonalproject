@@ -14,6 +14,7 @@ import re
 import time
 import random
 import argparse
+import pytz
 from datetime import datetime, timedelta, date
 
 BASE_URL = "https://anc.apm.activecommunities.com/fremont"
@@ -166,9 +167,11 @@ def parse_time_input(t: str) -> str:
 
 def check_and_print(days: int = 6, after_time: str = "20:00:00"):
     """Main check: print open slots after after_time for the next `days` days."""
+    pacific = pytz.timezone("America/Los_Angeles")
+    now_pacific = datetime.now(pacific)
     print(f"\n{'='*60}")
     print(f"  Fremont Pickleball - Open Slots After {format_time(after_time)}")
-    print(f"  Checked: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"  Checked: {now_pacific.strftime('%Y-%m-%d %H:%M:%S %Z')}")
     print(f"{'='*60}")
 
     try:
@@ -177,7 +180,7 @@ def check_and_print(days: int = 6, after_time: str = "20:00:00"):
         print(f"  ERROR: Failed to initialize session: {e}")
         return False
 
-    today = date.today()
+    today = now_pacific.date()
     found_any = False
 
     for day_offset in range(days):

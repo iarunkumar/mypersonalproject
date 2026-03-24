@@ -1,8 +1,9 @@
 import logging
 import os
+import pytz
+from datetime import datetime, date, timedelta
 from flask import Flask, Response, request
 from check_slots import get_session_and_csrf, get_availability, find_open_slots, format_time, parse_time_input
-from datetime import date, timedelta
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -27,10 +28,13 @@ def slots():
             mimetype="text/plain",
         )
 
+    pacific = pytz.timezone("America/Los_Angeles")
+    today_pacific = datetime.now(pacific).date()
+
     lines = []
 
     for i in range(6):
-        d = date.today() + timedelta(days=i)
+        d = today_pacific + timedelta(days=i)
         label = d.strftime("%A, %b %-d")
         if i == 0:
             label += " (Today)"
