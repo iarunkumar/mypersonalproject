@@ -22,12 +22,43 @@ INDEX_TEMPLATE = """
         select { padding: 8px; font-size: 14px; margin-top: 5px; }
         button { margin-top: 20px; padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
         button:hover { background-color: #0056b3; }
+        button:disabled { background-color: #6c757d; cursor: not-allowed; }
+        
+        .loading-container {
+            display: none;
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading-text {
+            color: #333;
+            font-weight: bold;
+            font-size: 16px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Slot Availability Checker</h1>
-        <form method="GET" action="/slots">
+        <form method="GET" action="/slots" id="availabilityForm">
             <label for="days">Days to Show:</label>
             <select id="days" name="days" required>
                 <option value="">Select number of days</option>
@@ -58,9 +89,24 @@ INDEX_TEMPLATE = """
                 <option value="9pm">9:00 PM</option>
             </select>
 
-            <button type="submit">Check Availability</button>
+            <button type="submit" id="submitBtn">Check Availability</button>
         </form>
+        
+        <div class="loading-container" id="loadingContainer">
+            <div class="spinner"></div>
+            <div class="loading-text">⏳ Loading availability data...</div>
+        </div>
     </div>
+    
+    <script>
+        document.getElementById('availabilityForm').addEventListener('submit', function(e) {
+            // Show loading container
+            document.getElementById('loadingContainer').style.display = 'block';
+            // Disable submit button
+            document.getElementById('submitBtn').disabled = true;
+            document.getElementById('submitBtn').textContent = 'Checking...';
+        });
+    </script>
 </body>
 </html>
 """
@@ -101,80 +147,37 @@ def slots():
         )
 
     # Build HTML content
-    html_content = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Slot Availability</title>
-        <style>
-            body {{ font-family: Arial, sans-serif; margin: 20px; background-color: #f5f5f5; }}
-            .container {{ max-width: 800px; margin: 0 auto; }}
-            .header {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }}
-            .back-button {{ padding: 10px 20px; background-color: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; text-decoration: none; }}
-            .back-button:hover {{ background-color: #5a6268; }}
-            h1 {{ color: #333; }}
-            .date-header {{ 
-                background-color: #007bff; 
-                color: white; 
-                padding: 15px; 
-                margin-top: 20px; 
-                margin-bottom: 10px;
-                border-radius: 4px;
-                font-size: 18px;
-                font-weight: bold;
-            }}
-            .court-name {{
-                background-color: #e7f3ff;
-                color: #0056b3;
-                padding: 10px 15px;
-                margin-top: 10px;
-                margin-bottom: 8px;
-                border-left: 4px solid #0056b3;
-                font-weight: bold;
-            }}
-            .time-slots {{
-                display: flex;
-                flex-wrap: wrap;
-                gap: 10px;
-                margin-left: 15px;
-                margin-bottom: 10px;
-            }}
-            .time-slot {{
-                background-color: #28a745;
-                color: white;
-                padding: 10px 15px;
-                border-radius: 4px;
-                font-weight: bold;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            }}
-            .no-slots {{
-                color: #666;
-                font-style: italic;
-                margin-left: 15px;
-                margin-top: 10px;
-                padding: 10px;
-                background-color: #fff3cd;
-                border-left: 4px solid #ffc107;
-                border-radius: 4px;
-            }}
-            .error {{
-                color: #dc3545;
-                background-color: #f8d7da;
-                padding: 10px 15px;
-                margin-top: 10px;
-                border-left: 4px solid #dc3545;
-                border-radius: 4px;
-            }}
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="header">
-                <h1>🎾 Slot Availability</h1>
-                <a href="/" class="back-button">← Back</a>
-            </div>
-            <p><strong>Time Filter:</strong> {format_time(after_time)} and later</p>
-    """
+    css_styles = (
+        "body { font-family: Arial, sans-serif; margin: 20px; background-color: #f5f5f5; }\n"
+        ".container { max-width: 800px; margin: 0 auto; }\n"
+        ".header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }\n"
+        ".back-button { padding: 10px 20px; background-color: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; text-decoration: none; }\n"
+        ".back-button:hover { background-color: #5a6268; }\n"
+        "h1 { color: #333; }\n"
+        ".date-header { background-color: #007bff; color: white; padding: 15px; margin-top: 20px; margin-bottom: 10px; border-radius: 4px; font-size: 18px; font-weight: bold; }\n"
+        ".court-name { background-color: #e7f3ff; color: #0056b3; padding: 10px 15px; margin-top: 10px; margin-bottom: 8px; border-left: 4px solid #0056b3; font-weight: bold; }\n"
+        ".time-slots { display: flex; flex-wrap: wrap; gap: 10px; margin-left: 15px; margin-bottom: 10px; }\n"
+        ".time-slot { background-color: #28a745; color: white; padding: 10px 15px; border-radius: 4px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }\n"
+        ".no-slots { color: #666; font-style: italic; margin-left: 15px; margin-top: 10px; padding: 10px; background-color: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px; }\n"
+        ".error { color: #dc3545; background-color: #f8d7da; padding: 10px 15px; margin-top: 10px; border-left: 4px solid #dc3545; border-radius: 4px; }"
+    )
+    
+    # Build HTML content
+    html_parts = [
+        '<!DOCTYPE html>',
+        '<html>',
+        '<head>',
+        '    <title>Slot Availability</title>',
+        '    <style>' + css_styles + '</style>',
+        '</head>',
+        '<body>',
+        '    <div class="container">',
+        '        <div class="header">',
+        '            <h1>Slot Availability</h1>',
+        '            <a href="/" class="back-button">Back</a>',
+        '        </div>',
+        '        <p><strong>Time Filter:</strong> ' + format_time(after_time) + ' and later</p>'
+    ]
 
     for i in range(days_count):
         d = date.today() + timedelta(days=i)
@@ -189,33 +192,35 @@ def slots():
             open_slots = find_open_slots(avail, after_time)
         except Exception as e:
             logger.error("Failed to fetch availability for %s: %s", d.isoformat(), e)
-            html_content += f"""
-            <div class="date-header">{label}</div>
-            <div class="error">Error fetching availability: {e}</div>
-            """
+            html_parts.extend([
+                '        <div class="date-header">' + label + '</div>',
+                '        <div class="error">Error fetching availability: ' + str(e) + '</div>'
+            ])
             continue
 
-        html_content += f'<div class="date-header">{label}</div>'
+        html_parts.append('        <div class="date-header">' + label + '</div>')
 
         if not open_slots:
-            html_content += f'<div class="no-slots">No open slots after {format_time(after_time)}</div>'
+            html_parts.append('        <div class="no-slots">No open slots after ' + format_time(after_time) + '</div>')
         else:
             by_court = {}
             for s in open_slots:
                 by_court.setdefault(s["court"], []).append(s["time"])
             
             for court, times in by_court.items():
-                html_content += f'<div class="court-name">🏀 {court}</div>'
-                html_content += '<div class="time-slots">'
+                html_parts.append('        <div class="court-name">' + court + '</div>')
+                html_parts.append('        <div class="time-slots">')
                 for time in times:
-                    html_content += f'<div class="time-slot">{format_time(time)}</div>'
-                html_content += '</div>'
+                    html_parts.append('            <div class="time-slot">' + format_time(time) + '</div>')
+                html_parts.append('        </div>')
 
-    html_content += """
-        </div>
-    </body>
-    </html>
-    """
+    html_parts.extend([
+        '    </div>',
+        '</body>',
+        '</html>'
+    ])
+
+    html_content = '\n'.join(html_parts)
 
     return Response(html_content, mimetype="text/html")
 
