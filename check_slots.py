@@ -14,7 +14,7 @@ import re
 import time
 import random
 import argparse
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta, date, timezone
 
 BASE_URL = "https://anc.apm.activecommunities.com/fremont"
 LANDING_URL = f"{BASE_URL}/reservation/landing/quick?groupId=6&locale=en-US"
@@ -168,7 +168,7 @@ def check_and_print(days: int = 6, after_time: str = "20:00:00"):
     """Main check: print open slots after after_time for the next `days` days."""
     print(f"\n{'='*60}")
     print(f"  Fremont Pickleball - Open Slots After {format_time(after_time)}")
-    print(f"  Checked: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"  Checked: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')} UTC")
     print(f"{'='*60}")
 
     try:
@@ -177,7 +177,7 @@ def check_and_print(days: int = 6, after_time: str = "20:00:00"):
         print(f"  ERROR: Failed to initialize session: {e}")
         return False
 
-    today = date.today()
+    today = datetime.now(timezone.utc).date()
     found_any = False
 
     for day_offset in range(days):
