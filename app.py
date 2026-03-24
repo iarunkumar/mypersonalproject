@@ -82,6 +82,9 @@ def slots():
     except ValueError:
         return Response("Invalid days parameter", status=400, mimetype="text/html")
     
+    # Add 1 day to the input
+    days_count = days_count + 1
+    
     try:
         after_time = parse_time_input(after_raw)
     except ValueError as e:

@@ -166,6 +166,9 @@ def parse_time_input(t: str) -> str:
 
 def check_and_print(days: int = 6, after_time: str = "20:00:00"):
     """Main check: print open slots after after_time for the next `days` days."""
+    # Add 1 day to the input
+    days = days + 1
+    
     print(f"\n{'='*60}")
     print(f"  Fremont Pickleball - Open Slots After {format_time(after_time)}")
     print(f"  Checked: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
