@@ -2,7 +2,7 @@ import logging
 import os
 from flask import Flask, Response, request
 from check_slots import get_session_and_csrf, get_availability, find_open_slots, format_time, parse_time_input
-from datetime import date, timedelta
+from datetime import datetime, timedelta, timezone
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -30,7 +30,7 @@ def slots():
     lines = []
 
     for i in range(6):
-        d = date.today() + timedelta(days=i)
+        d = datetime.now(timezone.utc).date() + timedelta(days=i)
         label = d.strftime("%A, %b %-d")
         if i == 0:
             label += " (Today)"
