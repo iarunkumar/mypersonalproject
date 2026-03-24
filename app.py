@@ -1,4 +1,5 @@
 import logging
+import os
 from flask import Flask, Response, request
 from check_slots import get_session_and_csrf, get_availability, find_open_slots, format_time, parse_time_input
 from datetime import date, timedelta
@@ -61,4 +62,5 @@ def slots():
     return Response("\n".join(lines), mimetype="text/plain")
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host="0.0.0.0", port=port)
