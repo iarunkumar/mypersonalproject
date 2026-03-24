@@ -41,4 +41,4 @@ def slots():
     return Response("\n".join(lines), mimetype="text/plain")
 
 if __name__ == "__main__":
-    app.run()
+    app.run(host="0.0.0.0", port=5000)
