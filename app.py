@@ -1,6 +1,10 @@
+import logging
 from flask import Flask, Response, request
 from check_slots import get_session_and_csrf, get_availability, find_open_slots, format_time, parse_time_input
 from datetime import date, timedelta
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
@@ -12,7 +16,16 @@ def slots():
     except ValueError as e:
         return Response(str(e), status=400, mimetype="text/plain")
 
-    session, csrf = get_session_and_csrf()
+    try:
+        session, csrf = get_session_and_csrf()
+    except Exception as e:
+        logger.error("Failed to initialize session with external API: %s", e)
+        return Response(
+            f"Service unavailable: could not reach the reservations API ({e})",
+            status=503,
+            mimetype="text/plain",
+        )
+
     lines = []
 
     for i in range(6):
@@ -23,12 +36,19 @@ def slots():
         elif i == 1:
             label += " (Tomorrow)"
 
-        avail = get_availability(session, csrf, d)
-        open_slots = find_open_slots(avail, after_time)
+        try:
+            avail = get_availability(session, csrf, d)
+            open_slots = find_open_slots(avail, after_time)
+        except Exception as e:
+            logger.error("Failed to fetch availability for %s: %s", d.isoformat(), e)
+            lines.append(label)
+            lines.append(f"  Error fetching availability: {e}")
+            lines.append("")
+            continue
 
         lines.append(label)
         if not open_slots:
-            lines.append("  No open slots after 8 PM")
+            lines.append(f"  No open slots after {format_time(after_time)}")
         else:
             by_court = {}
             for s in open_slots:
