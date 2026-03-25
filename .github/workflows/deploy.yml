@@ -1,0 +1,26 @@
+  name: Deploy to Cloud Run
+
+  on:
+    push:
+      branches:
+        - main        # auto-deploy on every push to main
+                                                                                                                                                                                                                 
+  jobs:
+    deploy:                                                                                                                                                                                                      
+      runs-on: ubuntu-latest
+
+      steps:
+        - name: Checkout code
+          uses: actions/checkout@v3                                                                                                                                                                              
+   
+        - name: Authenticate to Google Cloud                                                                                                                                                                     
+          uses: google-github-actions/auth@v2
+          with:                                                                                                                                                                                                  
+            credentials_json: ${{ secrets.GCP_SA_KEY }}
+                                                                                                                                                                                                                 
+        - name: Deploy to Cloud Run
+          uses: google-github-actions/deploy-cloudrun@v2
+          with:
+            service: fremont-slots                                                                                                                                                                               
+            region: us-central1
+            source: . 
